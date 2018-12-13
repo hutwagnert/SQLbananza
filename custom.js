@@ -5,6 +5,8 @@ var stockHolder =[];
 var customerChoice ;
 var customerAmount ;
 var qtyIn ;
+var managerChoice;
+var managerAmount;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -51,12 +53,11 @@ function runThrough(){
 function whichAnswer(answer){
   switch (answer.action) {
     case "Customer":
-    runThrough();
-    customerShop();
+  customer();
       break;
 
     case "Manager":
-      console.log("manager");
+      manager();
       break;
 
     case "Superviser":
@@ -65,9 +66,117 @@ function whichAnswer(answer){
 
     case "Exit":
       exit();
-    }
-}
+    }};
+function customer(){
 
+  customerShop();
+};
+runThrough();
+function whichAction(answer){
+  switch (answer.action) {
+    case "View Products for Sale":
+    productView();
+      break;
+
+    case "View Low Inventory":
+      lowInventory();
+      break;
+
+    case "Add to Inventory":
+      addInventory();
+      break;
+
+    case "Add New Product":
+    console.log("superviser");
+
+    case "Exit":
+    exit();
+  }  
+};
+
+function manager() {
+  inquirer
+    .prompt({
+      name: "action",
+      type: "rawlist",
+      message: "what do you want to do?",
+      choices: [
+        "View Products for Sale",
+        "View Low Inventory",
+        "Add to Inventory",
+        "Add New Product",
+        "Exit"
+
+      ]
+    })
+    .then((answer)=> {
+      whichAction(answer);
+    });
+    
+}
+function productView(){
+  //console.log('made it here');
+  const query = "select item_id, product_desc, instock_qty from stock";
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+ for(i=0;i<res.length;i++){
+   console.log("|| item id: "+res[i].item_id+"|| name: "+res[i].product_desc+"|| qty in stock: "+res[i].instock_qty+'\n');
+ }
+  
+});
+};
+function lowInventory(){
+  const query = "select item_id, product_desc, instock_qty from stock where instock_qty < 10";
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+    if(res.length > 0){
+      for(i=0;i<res.length;i++){
+        console.log("|| item id: "+res[i].item_id+"|| name: "+res[i].product_desc+"|| qty in stock: "+res[i].instock_qty+'\n');
+     }
+    } else(console.log("all stock above 10!"))
+  });
+}
+function addInventory(){
+  inquirer
+  .prompt({
+    name: "item",
+    type: "rawlist",
+    message: "Which item do you want?",
+    choices: stockHolder
+  })
+  .then((answer)=> {
+    managerChoice =answer.item;
+    getAmount();
+  });
+};
+function getAmount(){
+  //gets the amount the managmer wants to place
+  inquirer
+  .prompt({
+    name: "amount",
+    type: "input",
+    message: "Add how much?",
+  })
+  .then((answer)=> {
+    var amounthold=0;
+    managerAmount =answer.amount;
+    const query1 = "SELECT instock_qty FROM stock where product_desc = ?";
+  connection.query(query1, managerChoice, (err, res) => {
+    if (err) throw err;
+   
+  amounthold = managerAmount + res[0].instock_qty;
+    
+    
+
+  });
+    const query = "UPDATE stock SET instock_qty = ? WHERE product_desc = ?";
+    connection.query(query,[amounthold,managerChoice], (err, res) => {
+      if (err) throw err;
+      console.log("updated amount of "+managerChoice+ "to "+amounthold);
+      
+    });
+  });
+} 
 function customerShop(){
   
     inquirer
@@ -90,7 +199,7 @@ function getMany(){
   .prompt({
     name: "amount",
     type: "input",
-    message: "Which how many?",
+    message: "How many?",
   })
   .then((answer)=> {
     customerAmount =answer.amount;
