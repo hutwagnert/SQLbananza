@@ -2,9 +2,9 @@ var mysql = require("mysql");
 var inquirer = require("inquirer");
 require('dotenv').config();
 var stockHolder =[];
-var customerChoice ="";
-var customerAmount ="";
-var qtyIn ="";
+var customerChoice ;
+var customerAmount ;
+var qtyIn ;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -64,7 +64,7 @@ function whichAnswer(answer){
       break;
 
     case "Exit":
-      process.exit();
+      exit();
     }
 }
 
@@ -78,7 +78,8 @@ function customerShop(){
         choices: stockHolder
       })
       .then((answer)=> {
-        customerChoice=answer.item;
+        customerChoice =answer.item;
+        
         getMany();
       });
   
@@ -96,6 +97,7 @@ function getMany(){
  checktheQTY();
   });
 };
+
 function checktheQTY(){
   const query = "SELECT instock_qty FROM stock where product_desc = ?";
   connection.query(query, customerChoice, (err, res) => {
@@ -107,16 +109,45 @@ function checktheQTY(){
     }else if( qtyIn === 0){
       console.log("Sorry we are out of stock of "+customerChoice);
     }else if (qtyIn < customerAmount && qtyIn > 0){
-      Console.log("All we left is "+qtyIn+ " of "+customerChoice)
+      Console.log("All we left is "+qtyIn+ " of "+customerChoice);
       doyouwant();
     }
   });
 };
-function updateStock(){
-  const query = "update stock set instock_qty ? where product_desc = ?";
-  let newQTY= qtyIn - customerAmount;
-  connection.query(query, newQTY, customerChoice, (err, res) => {
+function updateStock(){ 
+  
+  const query2 = 'UPDATE stock SET instock_qty = ? WHERE product_desc = ?';
+  var newQTY= qtyIn - customerAmount;
+  connection.query(query2, [newQTY, customerChoice], function(err,res) {
     if (err) throw err;
-    
+
   });
+};
+function doyouwant(){
+  inquirer
+      .prompt({
+        name: "yn",
+        type: "rawlist",
+        message: "Do you want the remianing amount?",
+        choices: [
+          "Yes",
+          "No",
+        ]
+      })
+      .then((answer)=> {
+        if(answer.yn === "Yes"){
+          const query2 = 'UPDATE stock SET instock_qty = 0 WHERE product_desc = ?';
+          var newQTY= qtyIn - customerAmount;
+          connection.query(query2, customerChoice, function(err,res) {
+            if (err) throw err;
+        
+          });
+        }else {
+          Console.log('Sorry');
+          exit();
+        }
+      });
+}
+function exit(){
+  process.exit();
 };
