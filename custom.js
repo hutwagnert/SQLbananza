@@ -7,6 +7,7 @@ var customerAmount ;
 var qtyIn ;
 var managerChoice;
 var managerAmount;
+var qtyHold= 0;
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -158,21 +159,23 @@ function getAmount(){
     message: "Add how much?",
   })
   .then((answer)=> {
-    var amounthold=0;
-    managerAmount =answer.amount;
+  
+    managerAmount = parseInt(answer.amount);
     const query1 = "SELECT instock_qty FROM stock where product_desc = ?";
   connection.query(query1, managerChoice, (err, res) => {
     if (err) throw err;
-   
-  amounthold = managerAmount + res[0].instock_qty;
+
+    qtyHold = parseInt(res[0].instock_qty) +managerAmount;
+    console.log(qtyHold);
     
     
 
   });
+  
     const query = "UPDATE stock SET instock_qty = ? WHERE product_desc = ?";
-    connection.query(query,[amounthold,managerChoice], (err, res) => {
+    connection.query(query,[qtyHold, managerChoice], (err, res) => {
       if (err) throw err;
-      console.log("updated amount of "+managerChoice+ "to "+amounthold);
+      console.log("updated amount of "+managerChoice+ " to "+qtyHold);
       
     });
   });
