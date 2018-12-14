@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var consolet = require("console.table");
 require('dotenv').config();
 var stockHolder =[];
 var customerChoice ;
@@ -7,7 +8,9 @@ var customerAmount ;
 var qtyIn ;
 var managerChoice;
 var managerAmount;
-var qtyHold= 0;
+var qtyHold;
+var superHold1=[];
+var superHold2=[];
 
 var connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -51,6 +54,38 @@ function runThrough(){
  //console.log(stockHolder);
   });
 }
+function keepCustomer(){
+  inquirer
+    .prompt({
+      name: "action",
+      type: "confirm",
+      message: "Keep Shopping?",
+    })
+    .then((answer)=> {
+      if(answer){
+        customer();
+      }else{
+        starter();
+      }
+    });
+    
+}
+function stayManager(){
+  inquirer
+    .prompt({
+      name: "action",
+      type: "confirm",
+      message: "Stay in manager?",
+    })
+    .then((answer)=> {
+      if(answer){
+        manager();
+      }else{
+        starter();
+      }
+    });
+    
+}
 function whichAnswer(answer){
   switch (answer.action) {
     case "Customer":
@@ -62,7 +97,7 @@ function whichAnswer(answer){
       break;
 
     case "Superviser":
-      console.log("superviser");
+      superviser();
       break;
 
     case "Exit":
@@ -73,6 +108,45 @@ function customer(){
   customerShop();
 };
 runThrough();
+
+function superviser(){
+  const query = " select sum(customer_price) as price, sum(instock_qty) as total, dept from stock group by dept";
+  connection.query(query, (err, res) => {
+    if (err) throw err;
+
+  
+
+  const query2 = " select * from depos";
+  connection.query(query2, (err, result) => {
+    if (err) throw err;
+  superHold2.push(result);
+    console.log(res);
+    console.log(result);
+  });
+
+  
+  });
+ //console.log(headCost+' '+totalSt);
+  
+  //   if(answer.chooser === 'Produce'){
+  //     const query = " select sum(customer_price) as price from stock where dept = ?";
+  //     connection.query(query,answer.chooser, (err, res) => {
+  //       if (err) throw err;
+  //  headCost = res[0].price;});
+  //   }else if(answer.chooser === 'Chilled'){
+  //     const query = " select sum(customer_price) as price from stock where dept = ?";
+  //     connection.query(query,answer.chooser, (err, res) => {
+  //       if (err) throw err;
+  //  headCost = res[0].price;});
+  //   }else{
+  //     const query = " select sum(customer_price) as price from stock where dept = ?";
+  //     connection.query(query,answer.chooser, (err, res) => {
+  //       if (err) throw err;
+  //  headCost = res[0].price;});
+  //   }
+
+
+};
 function whichAction(answer){
   switch (answer.action) {
     case "View Products for Sale":
@@ -88,7 +162,8 @@ function whichAction(answer){
       break;
 
     case "Add New Product":
-    console.log("superviser");
+    newerOne();
+    break;
 
     case "Exit":
     exit();
@@ -114,7 +189,7 @@ function manager() {
       whichAction(answer);
     });
     
-}
+};
 function productView(){
   //console.log('made it here');
   const query = "select item_id, product_desc, instock_qty from stock";
@@ -123,9 +198,61 @@ function productView(){
  for(i=0;i<res.length;i++){
    console.log("|| item id: "+res[i].item_id+"|| name: "+res[i].product_desc+"|| qty in stock: "+res[i].instock_qty+'\n');
  }
+stayManager();
   
 });
 };
+
+function newerOne(){
+getid();
+};
+var id;
+function getid(){
+  inquirer
+  .prompt([
+    {
+    name: "id",
+    type: "input",
+    message: "what is the id",
+  },{
+    name: "name",
+    type: "input",
+    message: "what is the name?"
+  },{
+    name: "dept",
+    type: "input",
+    message: "what is the dept?",
+  },{
+    name: "price",
+    type: "input",
+    message: "what is the price?",
+  },{
+    name: "qty",
+    type: "input",
+    message: "what is the qty",
+  }
+])
+  .then((answer)=> { 
+    connection.query(
+      "INSERT INTO stock SET ?",
+      {
+        item_id: answer.id,
+        product_desc: answer.name,
+        dept: answer.dept,
+        customer_price: answer.price,
+        instock_qty:answer.qty
+      },
+      function(err) {
+        if (err) throw err;
+        console.log("You added "+answer.qty +" of "+ answer.name);
+    
+      }
+    );
+stayManager();
+
+  }); 
+};
+
 function lowInventory(){
   const query = "select item_id, product_desc, instock_qty from stock where instock_qty < 10";
   connection.query(query, (err, res) => {
@@ -134,7 +261,9 @@ function lowInventory(){
       for(i=0;i<res.length;i++){
         console.log("|| item id: "+res[i].item_id+"|| name: "+res[i].product_desc+"|| qty in stock: "+res[i].instock_qty+'\n');
      }
-    } else(console.log("all stock above 10!"))
+    } else(console.log("all stock above 10!"));
+stayManager();
+
   });
 }
 function addInventory(){
@@ -160,26 +289,35 @@ function getAmount(){
   })
   .then((answer)=> {
   
-    managerAmount = parseInt(answer.amount);
-    const query1 = "SELECT instock_qty FROM stock where product_desc = ?";
+    managerAmount = parseFloat(answer.amount);
+    qtyUpdate();
+ 
+  });
+  
+} 
+function qtyUpdate(){
+  const query1 = "SELECT instock_qty FROM stock where product_desc = ?";
   connection.query(query1, managerChoice, (err, res) => {
     if (err) throw err;
 
-    qtyHold = parseInt(res[0].instock_qty) +managerAmount;
-    console.log(qtyHold);
-    
-    
+    qtyHold =  parseInt(res[0].instock_qty)
 
+    instockUpdate();
+    
   });
-  
+}
+function instockUpdate(){
+
+  var newHold =qtyHold + managerAmount;
     const query = "UPDATE stock SET instock_qty = ? WHERE product_desc = ?";
-    connection.query(query,[qtyHold, managerChoice], (err, res) => {
+    connection.query(query,[newHold, managerChoice], (err, res) => {
       if (err) throw err;
-      console.log("updated amount of "+managerChoice+ " to "+qtyHold);
-      
-    });
+      console.log("updated amount of "+managerChoice+ " to "+newHold);
+     
+    stayManager();
   });
-} 
+    
+}
 function customerShop(){
   
     inquirer
@@ -232,7 +370,7 @@ function updateStock(){
   var newQTY= qtyIn - customerAmount;
   connection.query(query2, [newQTY, customerChoice], function(err,res) {
     if (err) throw err;
-
+    keepCustomer();
   });
 };
 function doyouwant(){
@@ -252,7 +390,7 @@ function doyouwant(){
           var newQTY= qtyIn - customerAmount;
           connection.query(query2, customerChoice, function(err,res) {
             if (err) throw err;
-        
+            keepCustomer();
           });
         }else {
           Console.log('Sorry');
