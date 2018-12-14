@@ -62,7 +62,7 @@ function keepCustomer(){
       message: "Keep Shopping?",
     })
     .then((answer)=> {
-      if(answer){
+      if(answer.action === 'Yes'){
         customer();
       }else{
         starter();
@@ -78,8 +78,24 @@ function stayManager(){
       message: "Stay in manager?",
     })
     .then((answer)=> {
-      if(answer){
+      if(answer.action === 'Yes'){
         manager();
+      }else{
+        starter();
+      }
+    });
+    
+}
+function staySuperviser(){
+  inquirer
+    .prompt({
+      name: "action",
+      type: "confirm",
+      message: "Stay in superviser?",
+    })
+    .then((answer)=> {
+      if(answer.action === 'Yes'){
+        superviser();
       }else{
         starter();
       }
@@ -120,32 +136,17 @@ function superviser(){
   connection.query(query2, (err, result) => {
     if (err) throw err;
   superHold2.push(result);
-    console.log(res);
-    console.log(result);
+
+    var values = [
+      [result[0].dept_id, result[0].dept_name,result[0].overhead_price,(200 - res[0].total),(((200 - res[0].total)*(res[0].price))-result[0].overhead_price)],
+      [result[1].dept_id, result[1].dept_name,result[1].overhead_price,(200 - res[1].total),(((200 - res[1].total)*(res[1].price))-result[1].overhead_price)],
+      [result[2].dept_id, result[2].dept_name,result[2].overhead_price,(200 - res[2].total),(((200 - res[2].total)*(res[2].price))-result[2].overhead_price)]
+];
+console.table(['deprtment_id', 'department_name','overhead_cost','product_sales','total_profit'],values);
+staySuperviser();
+  }); 
   });
-
   
-  });
- //console.log(headCost+' '+totalSt);
-  
-  //   if(answer.chooser === 'Produce'){
-  //     const query = " select sum(customer_price) as price from stock where dept = ?";
-  //     connection.query(query,answer.chooser, (err, res) => {
-  //       if (err) throw err;
-  //  headCost = res[0].price;});
-  //   }else if(answer.chooser === 'Chilled'){
-  //     const query = " select sum(customer_price) as price from stock where dept = ?";
-  //     connection.query(query,answer.chooser, (err, res) => {
-  //       if (err) throw err;
-  //  headCost = res[0].price;});
-  //   }else{
-  //     const query = " select sum(customer_price) as price from stock where dept = ?";
-  //     connection.query(query,answer.chooser, (err, res) => {
-  //       if (err) throw err;
-  //  headCost = res[0].price;});
-  //   }
-
-
 };
 function whichAction(answer){
   switch (answer.action) {
