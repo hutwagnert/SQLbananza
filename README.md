@@ -1,6 +1,7 @@
 # SQLbananza
 
 Hi all! welcome to SQLBananza where you can go shopping, be a manager or superviser.
+Open the github and see  the video or do a gitpull and try it yourself.
 
 To get started, creat a .env with :
 DB_HOST=
